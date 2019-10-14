@@ -1,0 +1,11 @@
+
+extend type Query {
+  three: Int
+  four: Int
+}
+
+
+extend type Query {
+  five: Int
+  six: Int
+}

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Overblog\GraphQLBundle\DependencyInjection\Compiler;
 
 use Overblog\GraphQLBundle\Config\Parser\AnnotationParser;
+use Overblog\GraphQLBundle\Config\Parser\GraphQL\ASTConverter\ObjectTypeExtensionNode;
 use Overblog\GraphQLBundle\Config\Parser\GraphQLParser;
 use Overblog\GraphQLBundle\Config\Parser\PreParserInterface;
 use Overblog\GraphQLBundle\Config\Parser\XmlParser;
@@ -89,9 +90,30 @@ class ConfigParserPass implements CompilerPassInterface
             $typeConfigs = \array_merge($typeConfigs, $this->parseTypeConfigFiles($params['type'], $params['files'], $container, $config));
         }
 
+        //$this->processExtensions($typeConfigs);
+        // Temporarily shift out extensions and re-merge
+        $extensions = [];
+        foreach($typeConfigs as $index => $typeConfig) {
+            foreach($typeConfig as $name => $node) {
+                if ($node['type'] === ObjectTypeExtensionNode::TYPENAME) {
+                    $extensions[] = [
+                        $name,
+                        $node
+                    ];
+                    unset($typeConfigs[$index][$name]);
+                }
+            }
+        }
+
         $this->checkTypesDuplication($typeConfigs);
+
         // flatten config is a requirement to support inheritance
         $flattenTypeConfig = \array_merge(...$typeConfigs);
+
+        // Merge extensions into the flattened structure
+        foreach($extensions as list($name, $extension)) {
+            $flattenTypeConfig[$name]['config'] = array_merge_recursive($flattenTypeConfig[$name]['config'], $extension['config']);
+        }
 
         return $flattenTypeConfig;
     }

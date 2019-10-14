@@ -45,6 +45,31 @@ class GraphQLParserTest extends TestCase
         GraphQLParser::parse(new \SplFileInfo(__DIR__.'/fixtures/graphql/not-supported-schema-definition.graphql'), $this->containerBuilder);
     }
 
+    public function testParseObjectTypeExtensionDefinition(): void
+    {
+        $typeConfig = GraphQLParser::parse(new \SplFileInfo(__DIR__.'/fixtures/graphql/extend-type.graphql'), $this->containerBuilder);
+        $this->assertEquals([
+            'Query' => [
+                'type' => 'object',
+                'config' => [
+                    'description' => 'Root Query',
+                    'fields' => [
+                        'one' => [
+                            'type' => 'String',
+                            'description' => '',
+                            'args' => []
+                        ],
+                        'two' => [
+                            'type' => 'String!',
+                            'description' => '',
+                            'args' => []
+                        ]
+                    ]
+                ]
+            ]
+        ], $typeConfig);
+    }
+
     public function testCustomScalarTypeDefaultFieldValue(): void
     {
         $this->expectException(\Exception::class);

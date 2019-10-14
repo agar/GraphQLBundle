@@ -1,0 +1,8 @@
+"""Root Query"""
+type Query {
+  one: String
+}
+
+extend type Query {
+  two: String!
+}

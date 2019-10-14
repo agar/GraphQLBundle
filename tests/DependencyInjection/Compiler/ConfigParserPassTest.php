@@ -62,6 +62,59 @@ class ConfigParserPassTest extends TestCase
         $this->processCompilerPass($this->getMappingConfig('annotation'));
     }
 
+    public function testGraphQLObjectTypeExtension(): void
+    {
+        $this->processCompilerPass($this->getMappingConfig('graphql'));
+        $config = $this->container->getParameter('overblog_graphql_types.config');
+        $this->assertEquals([
+            'Query' =>
+                [
+                    'type' => 'object',
+                    'class_name' => 'QueryType',
+                    'inherits' => [],
+                    'decorator' => false,
+                    'config' => [
+                        'description' => 'Root Query',
+                        'fields' => [
+                            'one' => [
+                                'type' => 'String',
+                                'description' => null,
+                                'args' => [],
+                            ],
+                            'two' => [
+                                'type' => 'String!',
+                                'description' => null,
+                                'args' => [],
+                            ],
+                            'three' => [
+                                'type' => 'Int',
+                                'description' => null,
+                                'args' => [],
+                            ],
+                            'four' => [
+                                'type' => 'Int',
+                                'description' => null,
+                                'args' => [],
+                            ],
+                            'five' => [
+                                'type' => 'Int',
+                                'description' => null,
+                                'args' => [],
+                            ],
+                            'six' => [
+                                'type' => 'Int',
+                                'description' => null,
+                                'args' => [],
+                            ],
+                        ],
+                        'name' => 'Query',
+                        'builders' => [],
+                        'interfaces' => [],
+                    ],
+                ],
+        ], $config);
+    }
+
     /**
      * @param $internalConfigKey
      * @dataProvider internalConfigKeys

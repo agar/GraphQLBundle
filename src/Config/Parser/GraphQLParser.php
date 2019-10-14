@@ -15,6 +15,7 @@ class GraphQLParser implements ParserInterface
 {
     private const DEFINITION_TYPE_MAPPING = [
         NodeKind::OBJECT_TYPE_DEFINITION => 'object',
+        NodeKind::OBJECT_TYPE_EXTENSION => 'objectTypeExtension',
         NodeKind::INTERFACE_TYPE_DEFINITION => 'interface',
         NodeKind::ENUM_TYPE_DEFINITION => 'enum',
         NodeKind::UNION_TYPE_DEFINITION => 'union',
@@ -30,6 +31,7 @@ class GraphQLParser implements ParserInterface
         $container->addResource(new FileResource($file->getRealPath()));
         $content = \trim(\file_get_contents($file->getPathname()));
         $typesConfig = [];
+        $typeExtensionsConfig = [];
 
         // allow empty files
         if (empty($content)) {
@@ -44,9 +46,26 @@ class GraphQLParser implements ParserInterface
         foreach ($ast->definitions as $typeDef) {
             if (isset($typeDef->kind) && \in_array($typeDef->kind, \array_keys(self::DEFINITION_TYPE_MAPPING))) {
                 $class = \sprintf('\\%s\\GraphQL\\ASTConverter\\%sNode', __NAMESPACE__, \ucfirst(self::DEFINITION_TYPE_MAPPING[$typeDef->kind]));
-                $typesConfig[$typeDef->name->value] = \call_user_func([$class, 'toConfig'], $typeDef);
+                if ($typeDef->kind == NodeKind::OBJECT_TYPE_EXTENSION) {
+                    $typeExtensionsConfig[] = [
+                        $typeDef->name->value,
+                        \call_user_func([$class, 'toConfig'], $typeDef)
+                    ];
+                } else {
+                    $typesConfig[$typeDef->name->value] = \call_user_func([$class, 'toConfig'], $typeDef);
+                }
             } else {
                 self::throwUnsupportedDefinitionNode($typeDef);
+            }
+        }
+
+        foreach ($typeExtensionsConfig as list($name, $node)) {
+            if (array_key_exists($name, $typesConfig) && $typesConfig[$name]['type'] == 'object') {
+                // Merge into the current type config
+                $typesConfig[$name]['config'] = array_merge_recursive($typesConfig[$name]['config'], $node['config']);
+            } else {
+                // Append to the config for merging later...
+                $typesConfig[$name] = $node;
             }
         }
 
